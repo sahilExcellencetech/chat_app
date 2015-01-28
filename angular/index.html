@@ -1,0 +1,81 @@
+<html>
+    <head>
+        <title>Chat app</title>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/skeleton.css">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <script src="js/lib/jquery.js"></script>
+        <script src="js/lib/angular.min.js"></script>
+        <script src="js/lib/ngStorage.js"></script>
+        <script src="js/lib/socket.io.js"></script>
+        <script src="js/lib/socket.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/account.js"></script>
+        <script src="js/user_list.js"></script>
+        <script src="js/lib/angular-facebook.js"></script>
+    </head>
+    <body ng-app="chat_app">
+        <div ng-controller="ctrl1">
+            <div ng-show="signup" class="one">
+                <div class="header">
+                    <img class="logo" src="images/logo.png">
+                </div>
+                <div class="container">
+                    <div class="row">
+                        <div class="twelve columns">
+                            <form method="post">
+                                <label for="name">Name</label>
+                                <input class="u-full-width" type="text" ng-model="name" placeholder="username" id="name">
+                                <label for="email">E-mail</label>
+                                <input class="u-full-width" type="email" ng-model="email" placeholder="email" id="email"><span class="warning">{{warning}}</span>
+                                <label for="password">Password</label>
+                                <input class="u-full-width" type="password" ng-model="pwd" placeholder="password" id="password">
+                                <div class="btn1">
+                                    <input class="button-primary reg" type="submit" ng-click="submit(name, email, pwd);" value="Register"><br>Or<br>
+                                    <input class="button-primary fblogin" type="submit" ng-click="loginfb();" value="Log In using Facebook"><br>
+                                    <a ng-click="memberlogin();" href="">Already a member?</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div ng-show="login" class="two">
+                <div class="container">
+                    <div class="row">
+                        <div class="twelve columns">
+                            <form method="post">
+                                <label for="email1">E-mail</label>
+                                <input class="u-full-width" type="email" ng-model="email1" placeholder="email" id="email1">
+                                <label for="password1">Password</label>
+                                <input class="u-full-width" type="password" ng-model="pwd1" placeholder="password" id="password1">
+                                <div class="btn2">
+                                    <input class="button-primary" type="submit" ng-click="sign_in(email1, pwd1);" value="Login"><br>
+                                    <a class="forgot" ng-click="forgot();" href="">Forgot Password?</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div ng-controller="ctrl2">
+            <div class="three" style="height: 100%;">
+                <div class="user_header">
+                    <span>Users</span>
+                </div>
+                <div class="user_list" ng-repeat="row in array">
+                    <div class="image">
+                        <img ng-src='{{row.image}}'>
+                    </div>
+                    <div class="details">
+                        <span class="name">{{row.name}}</span>&nbsp;<i class="fa fa-circle circle"></i><br>
+                        <span class="status">{{row.status}}</span><br>
+                        <span class="time">Last Login: {{row.time}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
