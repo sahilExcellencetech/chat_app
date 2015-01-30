@@ -3,7 +3,7 @@
         <title>Chat app</title>
         <link rel="stylesheet" href="css/style.css">
         <link rel="stylesheet" href="css/skeleton.css">
-        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
         <script src="js/lib/jquery.js"></script>
         <script src="js/lib/angular.min.js"></script>
         <script src="js/lib/ngStorage.js"></script>
@@ -61,18 +61,18 @@
             </div>
         </div>
         <div ng-controller="ctrl2">
-            <div class="three" style="height: 100%;">
+            <div ng-show="list" class="three" style="height: 100%;">
                 <div class="user_header">
-                    <span>Users</span>
+                    <span>Users</span><input class="log button-primary" ng-click="logout();" type="button" value="Logout">
                 </div>
                 <div class="user_list" ng-repeat="row in array">
                     <div class="image">
                         <img ng-src='{{row.image}}'>
                     </div>
                     <div class="details">
-                        <span class="name">{{row.name}}</span>&nbsp;<i class="fa fa-circle circle"></i><br>
+                        <span class="name">{{row.name}}</span>&nbsp;<i ng-class="{'green': row.status == 'Online', 'gray': row.status == 'Offline'}" class="fa fa-circle circle "></i><br>
                         <span class="status">{{row.status}}</span><br>
-                        <span class="time">Last Login: {{row.time}}</span>
+                        <span class="time" ng-show="row.status == 'Offline'">{{row.time}}</span>
                     </div>
                 </div>
             </div>

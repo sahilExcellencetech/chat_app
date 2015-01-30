@@ -6,9 +6,9 @@ module.exports = function() {
 
     var model_schema = mongoose.Schema({}, {
         strict: false,
-        collection: 'table1'
+        collection: 'users'
     });
-    var CollectionModel = conn.model('table1', model_schema);
+    var CollectionModel = conn.model('users', model_schema);
 
     conn.on('error', function(err) {
         console.log(err);
