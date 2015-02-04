@@ -4,9 +4,14 @@ module.exports = function() {
 
     var conn = mongoose.connection;
 
-    var model_schema = mongoose.Schema({}, {
-        strict: false,
-        collection: 'users'
+    var model_schema = mongoose.Schema({
+        name: String,
+        email: {type: String, match: /@/, required: true, trim: true},
+        password: String,
+        status: String,
+        image: String,
+        time: String,
+        socket_id: String
     });
     var CollectionModel = conn.model('users', model_schema);
 

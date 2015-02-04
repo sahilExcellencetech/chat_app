@@ -1,0 +1,18 @@
+<div class="two">
+    <div class="container">
+        <div class="row">
+            <div class="twelve columns">
+                <form method="post">
+                    <label for="email1">E-mail</label>
+                    <input class="u-full-width" type="email" ng-model="email1" placeholder="email" id="email1">
+                    <label for="password1">Password</label>
+                    <input class="u-full-width" type="password" ng-model="pwd1" placeholder="password" id="password1">
+                    <div class="btn2">
+                        <input class="button-primary" type="submit" ng-click="sign_in(email1, pwd1);" value="Login"><br>
+                        <a class="forgot" ng-click="forgot();" href="">Forgot Password?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

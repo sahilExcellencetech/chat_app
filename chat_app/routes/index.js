@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
+
 var app = express();
 port = 8080;
 io = require('socket.io');
@@ -18,9 +19,9 @@ io.on('connection', function(socket) {
     });
     var users = conn.model('users', schem);
 
-    var name1, status1, image1, time, email3;
-    var arr = [], arr1 = [], arr2 = [], arr3 = [];
+    var name1, status1, image1, time, email3, id;
     socket.on('online', function(data) {
+        var arr = [];
         users.update({
             email: data.email2
         }, {
@@ -41,7 +42,8 @@ io.on('connection', function(socket) {
                         image1 = row.get('image');
                         time = row.get('time');
                         email3 = row.get('email');
-                        arr.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3});
+                        id = row.get('_id');
+                        arr.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3, id: id});
                     }
                     io.sockets.emit('result', {
                         arr: arr
@@ -51,6 +53,7 @@ io.on('connection', function(socket) {
         });
     });
     socket.on('offline', function(data) {
+        var arr1 = [];
         var moment = require('moment-timezone');
         var cur_time = moment.tz("Asia/Kolkata").format('h:mm a');
         users.update({
@@ -73,7 +76,8 @@ io.on('connection', function(socket) {
                         image1 = row.get('image');
                         time = row.get('time');
                         email3 = row.get('email');
-                        arr1.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3});
+                        id = row.get('_id');
+                        arr1.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3, id: id});
                     }
                     io.sockets.emit('result', {
                         arr: arr1
@@ -84,6 +88,7 @@ io.on('connection', function(socket) {
     });
 
     socket.on('disconnect', function() {
+        var arr2 = [];
         var sessionid = socket.id;
         users.findOne({socket_id: sessionid}, function(err, result) {
             if (err) {
@@ -111,7 +116,8 @@ io.on('connection', function(socket) {
                             image1 = row.get('image');
                             time = row.get('time');
                             email3 = row.get('email');
-                            arr2.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3});
+                            id = row.get('_id');
+                            arr2.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3, id: id});
                         }
                         io.sockets.emit('result', {
                             arr: arr2
@@ -124,6 +130,7 @@ io.on('connection', function(socket) {
     });
 
     socket.on('discon', function(data) {
+        var arr3 = [];
         var moment = require('moment-timezone');
         var cur_time = moment.tz("Asia/Kolkata").format('h:mm a');
         users.update({
@@ -146,7 +153,8 @@ io.on('connection', function(socket) {
                         image1 = row.get('image');
                         time = row.get('time');
                         email3 = row.get('email');
-                        arr3.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3});
+                        id = row.get('_id');
+                        arr3.push({name: name1, status: status1, image: image1, time: 'Last Seen:' + time, email3: email3, id: id});
                     }
                     io.sockets.emit('result', {
                         arr: arr3
@@ -155,6 +163,51 @@ io.on('connection', function(socket) {
             }
         });
     });
+    var new_room;
+    socket.on('chat_init', function(data) {
+        new_room = Date.now();
+        socket.join(new_room);
+        socket.emit('self', {
+            new_room: new_room
+        });
+//        socket.join('room1');
+        console.log("new_room");
+        console.log(new_room);
+        users.find({email: data.email3}, function(err, result) {
+            if (err) {
+                console.log(err);
+            }
+            var sckt = result[0].get('socket_id');
+            io.to(sckt).emit('chat_init1', {
+                new_room: new_room
+            });
+        });
+    });
+
+    socket.on('chat_init1_reply', function(data) {
+        console.log("new_room1");
+        console.log(data.new_room1);
+        socket.join(data.new_room1);
+//        socket.join('room1');
+    });
+
+    socket.on('msg', function(data) {
+        console.log("new_room2");
+        console.log(data.room);
+        socket.broadcast.to(data.room).emit('msg_reply', {
+            msg_reply: data.msg
+        });
+//        socket.broadcast.to('room1').emit('msg_reply', {
+//            msg_reply: data.msg
+//        });
+    });
+
+//    socket.on('msg', function(data) {
+//        io.to(data.socket_id1).emit('msg_reply', {
+//            msg_reply: data.msg
+//        });
+//    });
+
 
 });
 
@@ -287,6 +340,38 @@ router.all('/fblogin', function(req, res) {
         res.json({err: 'Unknown error'});
     }
 
+});
+
+router.all('/messages', function(req, res) {
+    var mongoose = require('mongoose');
+    var users = req.Collection;
+    var id = req.body.id1;
+    var name1, status1, image1, time, email3, socket_id1;
+    if (id) {
+        users.find({'_id': mongoose.Types.ObjectId(id)}, function(err, result) {
+            if (err) {
+                console.log(err);
+                res.json({err: 'Unknown error', err2: err});
+            }
+            var row = result[0];
+            name1 = row.get('name');
+            status1 = row.get('status');
+            image1 = row.get('image');
+            email3 = row.get('email');
+            time = row.get('time');
+            socket_id1 = row.get('socket_id');
+            res.json({name: name1, status: status1, image: image1, email3: email3, time: 'Last Seen:' + time, socket_id1: socket_id1});
+        });
+    }
+    else {
+        res.json();
+    }
+});
+
+router.all('/msgstore', function(req, res) {
+    var users = req.Collection;
+    var array = req.body.array1;
+    res.json();
 });
 
 module.exports = router;

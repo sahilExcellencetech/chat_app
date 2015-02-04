@@ -1,0 +1,35 @@
+<div class="four">
+    <div class="chat_header">
+        <a ng-click="back();"><i class="fa fa-chevron-left fa-2x back"></i></a>
+        <img class="image2" ng-src='{{image2}}'>
+        <div class="name2">{{name2}}</div><br>
+        <div ng-show="status2 == 'Online'" class="status2">{{status2}}</div>
+        <div ng-show="status2 == 'Offline'" class="time2">{{time2}}</div>
+    </div>
+    <div class="chat1">
+        <div class="chat" ng-repeat="row in message track by $index">
+            <div class="receive">
+                <div class="receive2" ng-show="row.bb == 2">
+                    <div class="msg_receive">
+                        {{row.receive_msg}}
+                    </div>
+                    <div class="time_receive">9:15 am</div>
+                    <div class="clear"></div>
+                </div>
+            </div>
+            <div class="send">
+                <div class="send2" ng-show="row.bb == 1">
+                    <div class="msg_send">
+                        {{row.send_msg}}
+                    </div>
+                    <div class="time_send">9:15 am</div>
+                    <div class="clear"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="type">
+        <input type="text" ng-model="msg" placeholder="type to compose" class="chatter">
+        <div ng-click="send_msg(msg);" class="send_msg">Send</div>
+    </div>
+</div>

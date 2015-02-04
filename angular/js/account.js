@@ -1,37 +1,33 @@
-var mainmod = angular.module('chat_app', ['ngStorage', 'common', 'facebook', 'users']);
-mainmod.config(function(FacebookProvider) {
-    FacebookProvider.init('1600665563479778');
-});
-mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request', 'local', function($scope, $rootScope, Facebook, ajax_request, local) {
+var mainmod1 = angular.module('signup', []);
+mainmod1.controller('signupctrl', ['$scope', '$rootScope', '$location', 'Facebook', 'ajax_request', 'local', 'dataShare', '$timeout',
+    function($scope, $rootScope, $location, Facebook, ajax_request, local, dataShare, $timeout) {
+
+        var socket = io.connect('http://localhost:8080');
         var local_email = local.get();
-        var socket = io.connect('http://localhost:8080/');
-        if (local_email.email) {
-            $rootScope.list = true;
-            $scope.login = false;
-            $scope.signup = false;
+        if (local_email.email1) {
+            $location.path('/users');
             socket.on('connect', function() {
                 socket.emit('online', {
-                    email2: local_email.email,
+                    email2: local_email.email1,
                     status: 'Online',
                     socket_id: socket.id
                 });
                 socket.on('result', function(data) {
                     var cur_user = local.get();
                     for (var i = 0; i < data.arr.length; i++) {
-                        if (cur_user.email == data.arr[i].email3) {
+                        if (cur_user.email1 == data.arr[i].email3) {
                             data.arr.splice(i, 1);
                         }
                     }
-                    $scope.$apply(function() {
-                        $rootScope.array = data.arr;
-                    });
+                    dataShare.set(data.arr);
+                    $timeout(function() {
+                        $rootScope.$broadcast('array');
+                    }, 100);
+//                    $scope.$apply(function() {
+//                        $rootScope.array = data.arr;
+//                    });
                 });
             });
-        }
-        else {
-            $rootScope.list = false;
-            $scope.login = false;
-            $scope.signup = true;
         }
         $scope.submit = function(name, email, pwd) {
             if (name && email && pwd) {
@@ -43,8 +39,7 @@ mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request',
                 ajax_request('/register', {name: name, email: email, pwd: pwd}).then(function(data) {
                     $scope.warning = data.warning;
                     if (!data.warning) {
-                        $scope.signup = false;
-                        $scope.login = true;
+                        $location.path('/login');
                     }
                 });
             }
@@ -53,8 +48,7 @@ mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request',
             ajax_request('/login', {email1: email1, pwd1: pwd1}).then(function(data) {
                 if (data.val) {
                     local.set(email1);
-                    $rootScope.list = true;
-                    $scope.login = false;
+                    $location.path('/users');
                     socket.emit('online', {
                         email2: data.email2,
                         status: 'Online',
@@ -63,13 +57,14 @@ mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request',
                     socket.on('result', function(data) {
                         var cur_user = local.get();
                         for (var i = 0; i < data.arr.length; i++) {
-                            if (cur_user.email == data.arr[i].email3) {
+                            if (cur_user.email1 == data.arr[i].email3) {
                                 data.arr.splice(i, 1);
                             }
                         }
-                        $scope.$apply(function() {
-                            $rootScope.array = data.arr;
-                        });
+                        dataShare.set(data.arr);
+                        $timeout(function() {
+                            $rootScope.$broadcast('array');
+                        }, 100);
                     });
                 }
 
@@ -91,8 +86,7 @@ mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request',
         };
 
         $scope.memberlogin = function() {
-            $scope.signup = false;
-            $scope.login = true;
+            $location.path('/login');
         };
 
         $scope.loginfb = function() {
@@ -104,8 +98,7 @@ mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request',
                     ajax_request('/fblogin', {fbid: response.id, fbname: response.name, fbemail: response.email}).then(function(data) {
                         if (data.val) {
                             local.set(data.email3);
-                            $rootScope.list = true;
-                            $scope.signup = false;
+                            $location.path('/users');
                             socket.emit('online', {
                                 email2: data.email3,
                                 status: 'Online',
@@ -114,13 +107,14 @@ mainmod.controller('ctrl1', ['$scope', '$rootScope', 'Facebook', 'ajax_request',
                             socket.on('result', function(data) {
                                 var cur_user = local.get();
                                 for (var i = 0; i < data.arr.length; i++) {
-                                    if (cur_user.email == data.arr[i].email3) {
+                                    if (cur_user.email1 == data.arr[i].email3) {
                                         data.arr.splice(i, 1);
                                     }
                                 }
-                                $scope.$apply(function() {
-                                    $rootScope.array = data.arr;
-                                });
+                                dataShare.set(data.arr);
+                                $timeout(function() {
+                                    $rootScope.$broadcast('array');
+                                }, 100);
                             });
                         }
                     });

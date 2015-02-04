@@ -1,0 +1,16 @@
+<div class="three" style="height: 100%;">
+    <div class="user_header">
+        <span>Users</span><input class="log button-primary" ng-click="logout();" type="button" value="Logout">
+    </div>
+    
+    <div class="user_list" ng-repeat="row in array">
+        <div class="image">
+            <a href="#/users/{{row.id}}" class="thumb"><img ng-src='{{row.image}}'></a>
+        </div>
+        <div class="details">
+            <a href="#/users/{{row.id}}" class="thumb"><span class="name">{{row.name}}</span></a>&nbsp;<i ng-class="{'green': row.status == 'Online', 'gray': row.status == 'Offline'}" class="fa fa-circle circle "></i><br>
+            <span class="status">{{row.status}}</span><br>
+            <span class="time" ng-show="row.status == 'Offline'">{{row.time}}</span>
+        </div>
+    </div>
+</div>
