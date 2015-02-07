@@ -1,10 +1,11 @@
 module.exports = function() {
-    var mongoose = require('mongoose');
+    var mongoose = require('mongoose')
+            , Schema = mongoose.Schema;
     mongoose.connect('mongodb://127.0.0.1/chat_app');
 
     var conn = mongoose.connection;
 
-    var model_schema = mongoose.Schema({
+    var user_schema = mongoose.Schema({
         name: String,
         email: {type: String, match: /@/, required: true, trim: true},
         password: String,
@@ -13,7 +14,16 @@ module.exports = function() {
         time: String,
         socket_id: String
     });
-    var CollectionModel = conn.model('users', model_schema);
+    var User = conn.model('users', user_schema);
+
+    var user_chat_schema = mongoose.Schema({
+        msg: String,
+        msg_time: Number,
+        sender_user_id: {type: Schema.Types.ObjectId, ref: 'users'},
+        receiver_user_id: {type: Schema.Types.ObjectId, ref: 'users'},
+        sent: Boolean
+    });
+    var User_Chat = conn.model('user_Chat', user_chat_schema);
 
     conn.on('error', function(err) {
         console.log(err);
@@ -21,7 +31,8 @@ module.exports = function() {
     });
     return function(req, res, next) {
         req.mongo = conn;
-        req.Collection = CollectionModel;
+        req.Collection = User;
+        req.Collection1 = User_Chat;
         next();
     };
 

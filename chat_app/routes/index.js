@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 
-
 var app = express();
 port = 8080;
 io = require('socket.io');
@@ -11,19 +10,35 @@ io = io.listen(server);
 server.listen(port);
 
 io.on('connection', function(socket) {
-    var mongoose = require('mongoose');
+    var mongoose = require('mongoose')
+            , Schema = mongoose.Schema;
     var conn = mongoose.createConnection('mongodb://127.0.0.1/chat_app');
-    var schem = mongoose.Schema({}, {
-        strict: false,
-        collection: 'users'
+
+    var user_schema = mongoose.Schema({
+        name: String,
+        email: {type: String, match: /@/, required: true, trim: true},
+        password: String,
+        status: String,
+        image: String,
+        time: String,
+        socket_id: String
     });
-    var users = conn.model('users', schem);
+    var User = conn.model('users', user_schema);
+
+    var user_chat_schema = mongoose.Schema({
+        msg: String,
+        msg_time: {type: Number, default: Date.now},
+        sender_user_id: {type: Schema.Types.ObjectId, ref: 'users'},
+        receiver_user_id: {type: Schema.Types.ObjectId, ref: 'users'},
+        sent: Boolean
+    });
+    var User_Chat = conn.model('user_Chat', user_chat_schema);
 
     var name1, status1, image1, time, email3, id;
     socket.on('online', function(data) {
         var arr = [];
-        users.update({
-            email: data.email2
+        User.update({
+            '_id': mongoose.Types.ObjectId(data.id)
         }, {
             $set: {
                 status: data.status,
@@ -31,7 +46,7 @@ io.on('connection', function(socket) {
             }
         }, function(err) {
             if (!err) {
-                users.find({}, function(err, result) {
+                User.find({}, function(err, result) {
                     if (err) {
                         console.log(err);
                     }
@@ -56,8 +71,8 @@ io.on('connection', function(socket) {
         var arr1 = [];
         var moment = require('moment-timezone');
         var cur_time = moment.tz("Asia/Kolkata").format('h:mm a');
-        users.update({
-            email: data.email
+        User.update({
+            '_id': mongoose.Types.ObjectId(data.id)
         }, {
             $set: {
                 status: data.status,
@@ -65,7 +80,7 @@ io.on('connection', function(socket) {
             }
         }, function(err) {
             if (!err) {
-                users.find({}, function(err, result) {
+                User.find({}, function(err, result) {
                     if (err) {
                         console.log(err);
                     }
@@ -90,13 +105,13 @@ io.on('connection', function(socket) {
     socket.on('disconnect', function() {
         var arr2 = [];
         var sessionid = socket.id;
-        users.findOne({socket_id: sessionid}, function(err, result) {
+        User.findOne({socket_id: sessionid}, function(err, result) {
             if (err) {
                 console.log(err);
             }
             var moment = require('moment-timezone');
             var cur_time = moment.tz("Asia/Kolkata").format('h:mm a');
-            users.update({
+            User.update({
                 socket_id: sessionid
             }, {
                 $set: {
@@ -105,7 +120,7 @@ io.on('connection', function(socket) {
                 }
             }, function(err) {
                 if (!err) {
-                    users.find({}, function(err, result) {
+                    User.find({}, function(err, result) {
                         if (err) {
                             console.log(err);
                         }
@@ -133,8 +148,8 @@ io.on('connection', function(socket) {
         var arr3 = [];
         var moment = require('moment-timezone');
         var cur_time = moment.tz("Asia/Kolkata").format('h:mm a');
-        users.update({
-            email: data.email5
+        User.update({
+            '_id': mongoose.Types.ObjectId(data.id)
         }, {
             $set: {
                 status: 'Offline',
@@ -142,7 +157,7 @@ io.on('connection', function(socket) {
             }
         }, function(err) {
             if (!err) {
-                users.find({}, function(err, result) {
+                User.find({}, function(err, result) {
                     if (err) {
                         console.log(err);
                     }
@@ -170,10 +185,9 @@ io.on('connection', function(socket) {
         socket.emit('self', {
             new_room: new_room
         });
-//        socket.join('room1');
         console.log("new_room");
         console.log(new_room);
-        users.find({email: data.email3}, function(err, result) {
+        User.find({email: data.email3}, function(err, result) {
             if (err) {
                 console.log(err);
             }
@@ -188,7 +202,6 @@ io.on('connection', function(socket) {
         console.log("new_room1");
         console.log(data.new_room1);
         socket.join(data.new_room1);
-//        socket.join('room1');
     });
 
     socket.on('msg', function(data) {
@@ -197,29 +210,80 @@ io.on('connection', function(socket) {
         socket.broadcast.to(data.room).emit('msg_reply', {
             msg_reply: data.msg
         });
-//        socket.broadcast.to('room1').emit('msg_reply', {
-//            msg_reply: data.msg
-//        });
     });
 
-//    socket.on('msg', function(data) {
-//        io.to(data.socket_id1).emit('msg_reply', {
-//            msg_reply: data.msg
-//        });
-//    });
+    socket.on('msgstore_send', function(data) {
+        var u2 = new User_Chat({
+            msg: data.msg_send,
+            sender_user_id: data.send_id,
+            receiver_user_id: data.rec_id,
+            msg_time: data.cur_time
+        });
+        u2.save(function(err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    });
 
+    socket.on('get_name', function(data) {
+        User.find({'_id': mongoose.Types.ObjectId(data.id)}, function(err, result) {
+            if (err) {
+                console.log(err);
+            }
+            var name = result[0].get('name');
+            socket.emit('set_name', {
+                name: name
+            });
+        });
+    });
+    var arr_send_msg = [];
+    socket.on('get_msg', function(data) {
+        var sender_msg, send_id, rec_id, sender_name, receiver_name, msg_time;
+        User_Chat.find({$or: [{sender_user_id: data.send_id, receiver_user_id: data.rec_id}, {sender_user_id: data.rec_id, receiver_user_id: data.send_id}]}, function(err, result) {
+            if (err) {
+                console.log(err);
+            }
+            for (var i = 0; i < result.length; i++) {
+                var row = result[i];
+                sender_msg = row.get('msg');
+                send_id = row.get('sender_user_id');
+                rec_id = row.get('receiver_user_id');
+                msg_time = row.get('msg_time');
+                arr_send_msg.push({msg: sender_msg, send_id: send_id, rec_id: rec_id, msg_time: msg_time});
+            }
+            User.find({'_id': mongoose.Types.ObjectId(data.send_id)}, function(err, result) {
+                if (err) {
+                    console.log(err);
+                }
+                sender_name = result[0].get('name');
+                User.find({'_id': mongoose.Types.ObjectId(data.rec_id)}, function(err, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    receiver_name = result[0].get('name');
+                    socket.emit('set_msg', {
+                        msgs: arr_send_msg,
+                        sender_name: sender_name,
+                        receiver_name: receiver_name
+                    });
+                });
+            });
+
+        });
+    });
 
 });
 
 router.all('/register', function(req, res) {
-    var users = req.Collection;
+    var User = req.Collection;
     var name = req.body.name;
     var email = req.body.email;
     var pwd = req.body.pwd;
     var status = "Offline";
     var image = "images/user.jpg";
     if (name && email && pwd) {
-        users.find({email: email}, function(err, result) {
+        User.find({email: email}, function(err, result) {
             if (err) {
                 console.log(err);
                 res.json({err: 'Unknown error', err2: err});
@@ -229,13 +293,14 @@ router.all('/register', function(req, res) {
                 var md5Hash = crypto.createHash('md5');
                 md5Hash.update(pwd);
                 var hash = md5Hash.digest('hex');
-                var post = new users({
+                var post = new User({
                     name: name,
                     email: email,
                     password: hash,
                     status: status,
                     image: image
                 });
+
                 post.save(function(err) {
                     if (err) {
                         console.log(err);
@@ -257,7 +322,7 @@ router.all('/register', function(req, res) {
 
 
 router.all('/login', function(req, res) {
-    var users = req.Collection;
+    var User = req.Collection;
     var email1 = req.body.email1;
     var pwd1 = req.body.pwd1;
     var temp, pass;
@@ -268,7 +333,7 @@ router.all('/login', function(req, res) {
         res.json({random_pwd: random_pwd});
     }
     else if (email1) {
-        users.find({email: email1}, function(err, result) {
+        User.find({email: email1}, function(err, result) {
             if (err) {
                 console.log(err);
                 res.json({err: 'Unknown error', err2: err});
@@ -283,8 +348,9 @@ router.all('/login', function(req, res) {
                 md5Hash.update(pwd1);
                 var hash1 = md5Hash.digest('hex');
                 pass = result[0].get('password');
+                var local_id = result[0].get('_id');
                 if (hash1 == pass) {
-                    res.json({val: 1, email2: email1});
+                    res.json({val: 1, email2: email1, local_id: local_id});
                 }
                 else {
                     temp = "Incorrect E-mail/Password";
@@ -300,7 +366,7 @@ router.all('/login', function(req, res) {
 });
 
 router.all('/fblogin', function(req, res) {
-    var users = req.Collection;
+    var User = req.Collection;
     var fbid = req.body.fbid;
     var fbname = req.body.fbname;
     var fbemail = req.body.fbemail;
@@ -312,18 +378,18 @@ router.all('/fblogin', function(req, res) {
         md5Hash.update(random_pwd);
         var hash = md5Hash.digest('hex');
 
-        users.find({email: fbemail}, function(err, result) {
+        User.find({email: fbemail}, function(err, result) {
             if (err) {
                 console.log(err);
                 res.json({err: 'Unknown error', err2: err});
             }
             if (!result.length) {
-                var post = new users({
+                var post = new User({
                     fb_id: fbid,
                     name: fbname,
                     email: fbemail,
                     password: hash,
-                    status: '',
+                    status: 'Offline',
                     image: 'https://graph.facebook.com/' + fbid + '/picture'
                 });
                 post.save(function(err) {
@@ -333,7 +399,14 @@ router.all('/fblogin', function(req, res) {
                     }
                 });
             }
-            res.json({val: 1, email3: fbemail});
+            User.find({email: fbemail}, function(err, result) {
+                if (err) {
+                    console.log(err);
+                    res.json({err: 'Unknown error', err2: err});
+                }
+                var local_id = result[0].get('_id');
+                res.json({val: 1, email3: fbemail, local_id: local_id});
+            });
         });
     }
     else {
@@ -344,11 +417,11 @@ router.all('/fblogin', function(req, res) {
 
 router.all('/messages', function(req, res) {
     var mongoose = require('mongoose');
-    var users = req.Collection;
+    var User = req.Collection;
     var id = req.body.id1;
     var name1, status1, image1, time, email3, socket_id1;
     if (id) {
-        users.find({'_id': mongoose.Types.ObjectId(id)}, function(err, result) {
+        User.find({'_id': mongoose.Types.ObjectId(id)}, function(err, result) {
             if (err) {
                 console.log(err);
                 res.json({err: 'Unknown error', err2: err});
@@ -366,12 +439,6 @@ router.all('/messages', function(req, res) {
     else {
         res.json();
     }
-});
-
-router.all('/msgstore', function(req, res) {
-    var users = req.Collection;
-    var array = req.body.array1;
-    res.json();
 });
 
 module.exports = router;
